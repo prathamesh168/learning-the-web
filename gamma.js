@@ -10,11 +10,14 @@ function sum(n1){
     }
     return sum1;
 }
-var summation = sum(100);
 // console.log(summation);
 
-app.get('/',(req,res)=>{
-    console.log(`here is the ans of the question ${summation}`);
+app.get('/getsum',(req,res)=>{
+    const param = req.query.n1;
+    var summation = sum(param);
+    var hello  = ("Hello deviyo aur sajjano chaliye shuru karte hai");
+    var gam = hello +" here is the ans of the question " + summation;
+    res.send(gam);
 })
 
 app.listen(port,()=>{
