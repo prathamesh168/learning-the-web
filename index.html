@@ -1,0 +1,29 @@
+<head>
+    <title>
+        TODO HARD APP
+    </title>
+</head>
+<script>
+    function OnPress(){
+        fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo",{
+            method:"GET"    
+        }).then((data)=>{
+            data.json.then((data1)=>{
+                console.log(data1);
+            })
+        })
+    }
+</script>
+
+<body>
+    TODO id
+    <input id = "ID" type = "text"></input>
+    <br></br>
+    Titile
+    <input id = "ID" type = "text"></input>
+    <br></br>
+    Description 
+    <input id = "ID" type = "text"></input>
+    <br></br>
+    <button onclick="OnPress()">create TODO</button>
+</body>

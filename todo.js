@@ -88,7 +88,10 @@ function delete_a_todo(req,res){
 
 }
 
-
+app.get("/",(req,res)=>{
+    // const filePath = path.join(__dirname, 'index.html');
+    res.sendFile("/workspaces/learning-the-web/index.html");
+});
 app.get("/todo",list_all_todos);
 app.post("/todo",add_a_todo);
 // app.put("/todo/:id",update_a_todo);
