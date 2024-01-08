@@ -4,15 +4,50 @@
     </title>
 </head>
 <script>
+    // function OnPress(){
+       
+    //     fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo",{
+    //         method:"POST" ,
+    //         body: JSON.stringify({
+    //             "id" : 123,
+    //             "title":"gyasdfm",
+    //             "description" : "wake afdup at 6"
+    //         }),
+    //         headers:{
+    //             "Content-Type" : "application/json"
+    //         }   
+    //     }).then((resp)=>{
+    //         var gotit = resp;
+    //         // console.log(gotit);
+    //         resp.json().then((data)=>{
+    //             console.log(data);
+    //         })
+    //     })
+    // }
     function OnPress(){
-        fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo",{
-            method:"GET"    
-        }).then((data)=>{
-            data.json.then((data1)=>{
-                console.log(data1);
-            })
-        })
-    }
+    fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo", {
+        method: "POST",
+        body: JSON.stringify({
+            "id": 1242343,
+            "title": "gyasdf234234m",
+            "description": "wake 2342342afdup at 6"
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }).then((resp) => {
+        if (!resp.ok) {
+            throw new Error('Network response was not ok.');
+        }
+        return resp.json();
+    }).then((data) => {
+        console.log(data);
+        // Do something with the response data here
+    }).catch((error) => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+}
+
 </script>
 
 <body>
