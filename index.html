@@ -4,33 +4,37 @@
     </title>
 </head>
 <script>
-    // function OnPress(){
+    var button = document.createElement("button")
+    button.onclick()
+    function getdata(){
+        fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo", {
+        method: "GET",
        
-    //     fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo",{
-    //         method:"POST" ,
-    //         body: JSON.stringify({
-    //             "id" : 123,
-    //             "title":"gyasdfm",
-    //             "description" : "wake afdup at 6"
-    //         }),
-    //         headers:{
-    //             "Content-Type" : "application/json"
-    //         }   
-    //     }).then((resp)=>{
-    //         var gotit = resp;
-    //         // console.log(gotit);
-    //         resp.json().then((data)=>{
-    //             console.log(data);
-    //         })
-    //     })
-    // }
+    }).then((resp) => {
+        if (!resp.ok) {
+            throw new Error('Network response was not ok.');
+        }
+        return resp.json();
+    }).then((data) => {
+        console.log(data);
+        var mainarea = document.getElementById("MainContent");
+        mainarea.innerHTML = JSON.stringify(data);
+        // Do something with the response data here
+    }).catch((error) => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+}
+    getdata();
     function OnPress(){
-    fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo", {
+        var id = document.getElementById("ID").value;
+        var title = document.getElementById("title").value;
+        var description = document.getElementById("description").value;
+        fetch("https://crispy-system-7x7pq7gpx7gc67q-3000.app.github.dev/todo", {
         method: "POST",
         body: JSON.stringify({
-            "id": 1242343,
-            "title": "gyasdf234234m",
-            "description": "wake 2342342afdup at 6"
+            "id": id,
+            "title": title,
+            "description": description
         }),
         headers: {
             "Content-Type": "application/json"
@@ -42,6 +46,8 @@
         return resp.json();
     }).then((data) => {
         console.log(data);
+        var mainarea = document.getElementById("MainContent");
+        mainarea.innerHTML = JSON.stringify(data);
         // Do something with the response data here
     }).catch((error) => {
         console.error('There was a problem with the fetch operation:', error);
@@ -55,10 +61,14 @@
     <input id = "ID" type = "text"></input>
     <br></br>
     Titile
-    <input id = "ID" type = "text"></input>
+    <input id = "title" type = "text"></input>
     <br></br>
     Description 
-    <input id = "ID" type = "text"></input>
+    <input id = "description" type = "text"></input>
     <br></br>
     <button onclick="OnPress()">create TODO</button>
+
+    <div id = "MainContent">
+        here it will show data
+        </div>
 </body>
