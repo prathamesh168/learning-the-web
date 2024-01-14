@@ -2,7 +2,9 @@ const exp = require("express")
 const bodyparser = require('body-parser')
 const fs = require("fs")
 const app = exp();
+const cors = require("cors");
 const port = 3000
+app.use(cors());
 app.use(bodyparser.json())
 function curr_data() {
     try {
