@@ -1,8 +1,8 @@
-const exp = require("express")
+const cors = require("cors");
 const bodyparser = require('body-parser')
+const exp = require("express")
 const fs = require("fs")
 const app = exp();
-const cors = require("cors");
 const port = 3000
 app.use(cors());
 app.use(bodyparser.json())

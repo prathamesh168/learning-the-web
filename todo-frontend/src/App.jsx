@@ -17,24 +17,24 @@ function useTodo(){
         })
     })
   })
-  return todos
+  return todos;
 }
 
 
 function App() {
-  const todos = useTodo();
+  const todos1 = useTodo();
   return (
     <>
-      {todos.map(todo =>{
+      {todos1.map(todo1 =>{
         return <div>
-          {todo.title}
-          {todo.description}
+          {todo1.title}
+          {todo1.description}
           <button>Delete</button>
         <br />
         </div>
       })}
     </>
   )
-}
+};
 
-export default App
+export default App;
