@@ -4,7 +4,6 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import React from 'react'
 
-
 function useTodo(){
   const [todos, setTodo] = React.useState([]);
   React.useEffect(() => {
