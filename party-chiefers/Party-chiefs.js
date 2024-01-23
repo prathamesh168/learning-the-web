@@ -3,14 +3,13 @@ const cors = require("cors");
 const bodyparser = require('body-parser')
 const jwt = require("jsonwebtoken")
 const exp = require("express")
-const fs = require("fs");
-const internal = require("stream");
-const { send } = require("vite");
 const app = exp();
 const Port = 3009
 const mongoURI = 'mongodb+srv://prathamesh:mulay@cheifandcustomer.u6pxjjm.mongodb.net/dataimp';
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
+
+// database schemas
 const AdminSchema = new mongoose.Schema({
    
     email: String,
@@ -26,7 +25,9 @@ const CustomerSchema = new mongoose.Schema({
 
 const subschema = new mongoose.Schema({name : String , vvg: Boolean, type: String })
 const CuisinesSchema = new mongoose.Schema({
-    cuisines: [subschema]
+    cuisines: [subschema],
+    price:Number,
+    NOP: Number // number of people
 },{ collection: 'cuisines' })
 
 const messages = new mongoose.Schema({sender: Boolean , message: String})
@@ -35,11 +36,23 @@ const ChatsSchema = new mongoose.Schema({
     Adminid: Number,
     messages: [messages]
 },{ collection: 'chats' })
- 
+
+const BookingsSchema = new mongoose.Schema({
+    Customerid: Number,
+    Cuisineid: Number,
+    DOB: Date, // date of booking
+    DOS: Date,// date of service
+    NPS: Number, //number of people serving,
+    transactionid: Number
+},{ collection: 'chats' })
+
+//database models
 const Admin = mongoose.model("Admin" , AdminSchema);
 const Customer = mongoose.model("Customer",CustomerSchema);
 const Cuisines = mongoose.model("Cuisines",CuisinesSchema);
 const Chats = mongoose.model("Chats",ChatsSchema);
+const Bookings = mongoose.model("Bookings",BookingsSchema)
+
 app.use(cors());
 app.use(bodyparser.json())
 
@@ -113,26 +126,39 @@ app.get("/admin/profile" , (req,res)=> {
 
 
  function getCuisines(req,res){
-    res.send("Hello cousines");
- }
- app.get("/admin/cuisines" , getCuisines)
-
-
-
-app.post("/customer/signup" , async (req,res)=> {
-    const {email , password} = req.body
-    const customers = await Customer.findOne({username});
-    if (customers){
-        res.status(404).json({message: "admin already exist"});
+    const username = req.headers.user.username;
+    const cuisines = Cuisines.find({username});
+    if(cuisines){
+        res.json({cuisines});
     }
     else{
-        const newCustomer = new Customer({username,email,password});
-        await newCustomer.save();
-        const token = "Bearer " + generatetoken({username,email,password});
-        req.headers.authorization = token;
-        res.json({message: "Customer craeted sucessfully", token : token});
+        res.sendSatatus(403).json({message: "data not found"});
     }
+    
+}
+app.get("/admin/cuisines" , getCuisines)
+
+
+ app.get("/admin/chats/:customerid",Authenticateme , (req,res)=> {
+    console.log(" this is homepage ")
+    res.send("this is homepage")
  })
+
+
+ app.post("/customer/signup" , async (req,res)=> {
+     const {email , password} = req.body
+     const customers = await Customer.findOne({username});
+     if (customers){
+         res.status(404).json({message: "admin already exist"});
+        }
+        else{
+            const newCustomer = new Customer({username,email,password});
+            await newCustomer.save();
+            const token = "Bearer " + generatetoken({username,email,password});
+            req.headers.authorization = token;
+            res.json({message: "Customer craeted sucessfully", token : token});
+        }
+    })
 
 app.post("/customer/signin" , async (req,res)=> {
     const {username,password} = req.body;
@@ -154,22 +180,37 @@ app.get("/customer/profile" ,Authenticateme, (req,res)=> {
 
 
 app.get("/customer/cheiflist",Authenticateme , (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
- })
+    
+    const cuisines = Cuisines.find({});
+    if(cuisines){
+        res.json({cuisines});
+    }
+    else{
+        res.sendSatatus(403).json({message: "data not found"});
+    }
+})
 
 app.get("/customer/bookings",Authenticateme , (req,res)=> {
     console.log(" this is homepage ")
     res.send("this is homepage")
  })
 
-app.get("/customer/cheiflist/:chiefid",Authenticateme , (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
+app.get("/customer/cheiflist/:cuisineid",Authenticateme , (req,res)=> {
+    const {cuisineid} = req.params;
+    const cuisines = Cuisines.findById({cuisineid});
+    if(cuisines){
+        res.json({cuisines});
+    }
+    else{
+        res.sendSatatus(403).json({message: "data not found"});
+    }
  })
 
-app.post("/customer/booking/:cheifid",Authenticateme , (req,res)=> {
+app.post("/customer/booking/:cuisineid",Authenticateme , (req,res)=> {
     res.send("this is homepage")
+
+
+    
  })
 
  app.get("/customer/chats",Authenticateme , (req,res)=> {
@@ -183,11 +224,6 @@ app.get("/customer/chats/:chiefid",Authenticateme , (req,res)=> {
  })
 
  app.get("/admin/chats" ,Authenticateme, (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
- })
-
- app.get("/admin/chats/:customerid",Authenticateme , (req,res)=> {
     console.log(" this is homepage ")
     res.send("this is homepage")
  })
