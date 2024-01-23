@@ -38,8 +38,8 @@ const ChatsSchema = new mongoose.Schema({
 },{ collection: 'chats' })
 
 const BookingsSchema = new mongoose.Schema({
-    Customerid: Number,
-    Cuisineid: Number,
+    Customerid: [{type: mongoose.Schema.Types.ObjectId , ref: "Customer"}],
+    Cuisineid: [{type: mongoose.Schema.Types.ObjectId , ref: "Cuisines"}],
     DOB: Date, // date of booking
     DOS: Date,// date of service
     NPS: Number, //number of people serving,
@@ -125,9 +125,9 @@ app.get("/admin/profile" , (req,res)=> {
  })
 
 
- function getCuisines(req,res){
+ async function getCuisines(req,res){
     const username = req.headers.user.username;
-    const cuisines = Cuisines.find({username});
+    const cuisines =await Cuisines.find({username});
     if(cuisines){
         res.json({cuisines});
     }
@@ -179,9 +179,9 @@ app.get("/customer/profile" ,Authenticateme, (req,res)=> {
  })
 
 
-app.get("/customer/cheiflist",Authenticateme , (req,res)=> {
+app.get("/customer/cheiflist",Authenticateme ,async (req,res)=> {
     
-    const cuisines = Cuisines.find({});
+    const cuisines = await Cuisines.find({});
     if(cuisines){
         res.json({cuisines});
     }
@@ -207,10 +207,10 @@ app.get("/customer/cheiflist/:cuisineid",Authenticateme , (req,res)=> {
  })
 
 app.post("/customer/booking/:cuisineid",Authenticateme , (req,res)=> {
-    res.send("this is homepage")
-
-
-    
+    const {cuisineid,DOS,NOP,transactionid} = req.params;
+    const DOB =  new Date();
+    const Customerid = Customer.findOne({req.user.username});
+    const booking = new Bookings({Cuisineid, Customerid ,DOB,DOS,NOP,transactionid})
  })
 
  app.get("/customer/chats",Authenticateme , (req,res)=> {
