@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 const cors = require("cors");
 const bodyparser = require('body-parser')
 const jwt = require("jsonwebtoken")
-const exp = require("express")
+const exp = require("express");
 const app = exp();
 const Port = 3009
 const mongoURI = 'mongodb+srv://prathamesh:mulay@cheifandcustomer.u6pxjjm.mongodb.net/dataimp';
@@ -25,6 +25,7 @@ const CustomerSchema = new mongoose.Schema({
 
 const subschema = new mongoose.Schema({name : String , vvg: Boolean, type: String })
 const CuisinesSchema = new mongoose.Schema({
+    owner : [{type: mongoose.Schema.Types.ObjectId , ref: "Admin"}],
     cuisines: [subschema],
     price:Number,
     NOP: Number // number of people
@@ -32,8 +33,8 @@ const CuisinesSchema = new mongoose.Schema({
 
 const messages = new mongoose.Schema({sender: Boolean , message: String})
 const ChatsSchema = new mongoose.Schema({
-    Customerid: Number,
-    Adminid: Number,
+    Customerid: [{type: mongoose.Schema.Types.ObjectId , ref: "Customer"}],
+    Adminid: [{type: mongoose.Schema.Types.ObjectId , ref: "Admin"}],
     messages: [messages]
 },{ collection: 'chats' })
 
@@ -70,73 +71,82 @@ const generatetoken = (user)=>{
     const ans = jwt.sign(payload, secretKey,{expiresIn:"1h"})
     return ans
 }
-
-const Authenticateme = (req,res,next) =>{
-    const authheader = req.headers.authorization; 
-    if (authheader){
-
-        const data = authheader.split(" ");
-        jwt.verify(data,secretKey, (err,user)=>{
-            if(err){
-                return res.senStatus(403);
-
-            }
-            req.user = user;
-            next();
-        })
+const Authenticateme = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+  
+    if (authHeader) {
+      const [scheme, token] = authHeader.split(" ");
+  
+      if (scheme.toLowerCase() !== "bearer" || !token) {
+        return res.status(401).json({ message: "Invalid Authorization header format" });
+      }
+  
+      jwt.verify(token, secretKey, (err, user) => {
+        if (err) {
+          console.error(err);
+          return res.status(403).json({ message: "Token verification failed" });
+        }
+        // console.log(user);
+        req.user = user;
+        next();
+      });
+    } else {
+      res.status(401).json({ message: "Authorization header is missing" });
     }
-    else{
-        res.sendSatatus(403);
-    }
-}
+  };
+  
 
 
 
 app.post("/admin/signup" , async (req,res)=> {
     const { email , password} = req.body
-    const admins = await Admin.findOne({username});
+    const admins = await Admin.findOne({email});
     if (admins){
         res.status(404).json({message: "admin already exist"});
     }
     else{
         const newAdmin = new Admin({email,password});
         await newAdmin.save();
-        const token = "Bearer " + generatetoken({username,email,password});
+        const token = "Bearer " + generatetoken({email,password});
        
         res.json({message: "admin craeted sucessfully", token : token});
     }
  })
 
-app.post("/admin/signin" ,async (req,res)=> {
-    const {username,password} = req.body;
-    const admin =await Customer.findOne(u =>(u.email == username || u.username == username) && u.password == password); 
-    if(admin){
-        const token = "Bearer " + generatetoken(admin);
-        res.json({message : "logged in sucessfully" , token: token}); 
-    }
-    else{
+app.post("/admin/signin" , (req,res)=> {
+    const { email, password } = req.body;
+    const admin = Customer.findOne({
+        email:email,
+        password: password
+    });
+
+    if (admin) {
+    const token = "Bearer " + generatetoken(admin); // Assuming generatetoken is a valid function
+        res.json({ message: "logged in successfully", token: token });
+    } else {
         res.sendStatus(403);
     }
+
 })
  
 app.get("/admin/profile" , (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
+    const data = req.user;
+    res.json({data});
  })
 
 
  async function getCuisines(req,res){
-    const username = req.headers.user.username;
-    const cuisines =await Cuisines.find({username});
+    const email = req.user.email;
+    const cuisines =await Cuisines.find({email :email});
     if(cuisines){
         res.json({cuisines});
     }
     else{
-        res.sendSatatus(403).json({message: "data not found"});
+        res.sendStatus(403).json({message: "data not found"});
     }
     
 }
-app.get("/admin/cuisines" , getCuisines)
+app.get("/admin/cuisines",Authenticateme , getCuisines)
 
 
  app.get("/admin/chats/:customerid",Authenticateme , (req,res)=> {
@@ -144,73 +154,126 @@ app.get("/admin/cuisines" , getCuisines)
     res.send("this is homepage")
  })
 
+app.post("/admin/cuisines",Authenticateme,async (req,res)=>{
+    const {cuisines,price,NOP} = req.body;
+    const Adminid = await Admin.findOne({email:req.user.email});
 
- app.post("/customer/signup" , async (req,res)=> {
+    newCuisine=new Cuisines({owner:Adminid._id , cuisinse,price,NOP});
+    newCuisine.save();
+    res.json({message: "new cuisine menu added"});
+})
+
+app.put("/admin/cuisines/:cuisineid",Authenticateme,async (req,res)=>{
+    // const {cuisines,price,NOP} = req.body;
+    const Adminid = await Admin.findOne({email:req.user.email});
+
+    updatedCuisine=await Cuisines.findByIdAndUpdate(req.params.cuisineid,req.body);
+    // newCuisine.save();
+    if ( updatedCuisine){
+
+        res.json({message: "cuisine menu has updated"});
+    }
+    else{
+        res.sendStatus(404);
+    }
+})
+
+app.post("/customer/signup" , async (req,res)=> {
      const {email , password} = req.body
-     const customers = await Customer.findOne({username});
+     const customers = await Customer.findOne({email :username});
      if (customers){
          res.status(404).json({message: "admin already exist"});
         }
         else{
-            const newCustomer = new Customer({username,email,password});
+            const newCustomer = new Customer({email,password});
             await newCustomer.save();
-            const token = "Bearer " + generatetoken({username,email,password});
+            const token = "Bearer " + generatetoken({email,password});
             req.headers.authorization = token;
             res.json({message: "Customer craeted sucessfully", token : token});
         }
     })
 
 app.post("/customer/signin" , async (req,res)=> {
-    const {username,password} = req.body;
-    const customer = await Customer.findOne(u =>(u.email == username || u.username == username) && u.password == password); 
-    if(customer){
-        const token = generatetoken(customer);
-        req.headers.authorization = "Bearer " + token;
-        res.json({message : "logged in sucessfully" , token: token}); 
-    }
-    else{
+    const { email, password } = req.body;
+
+    try {
+    const admin = await Customer.findOne({
+        email:email,
+        password: password
+    });
+    console.log(admin)
+    if (admin) {
+        const token = "Bearer " + generatetoken(admin);
+        res.json({ message: "logged in successfully", token: token });
+    } else {
         res.sendStatus(403);
     }
+    } catch (error) {
+    // Handle any errors that might occur during the query
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+    }
+
 })
  
 app.get("/customer/profile" ,Authenticateme, (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
+    const data = req.user;
+    res.json({data}); 
  })
 
 
-app.get("/customer/cheiflist",Authenticateme ,async (req,res)=> {
+app.get("/customer/cuisines",Authenticateme ,async (req,res)=> {
     
     const cuisines = await Cuisines.find({});
     if(cuisines){
         res.json({cuisines});
     }
     else{
-        res.sendSatatus(403).json({message: "data not found"});
+        res.sendStatus(403).json({message: "data not found"});
     }
 })
-
-app.get("/customer/bookings",Authenticateme , (req,res)=> {
-    console.log(" this is homepage ")
-    res.send("this is homepage")
- })
-
-app.get("/customer/cheiflist/:cuisineid",Authenticateme , (req,res)=> {
+app.get("/customer/bookings", Authenticateme, async (req, res) => {
+    try {
+      const user = await Customer.findOne({ email: req.user.email });
+  
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      const bookings = await Bookings.find({ Customerid: user._id });
+  
+      res.json({ bookings });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  });
+  
+app.get("/customer/cuisines/:cuisineid",Authenticateme , (req,res)=> {
     const {cuisineid} = req.params;
     const cuisines = Cuisines.findById({cuisineid});
     if(cuisines){
         res.json({cuisines});
     }
     else{
-        res.sendSatatus(403).json({message: "data not found"});
+        res.sendStatus(403).json({message: "data not found"});
     }
  })
 
-app.post("/customer/booking/:cuisineid",Authenticateme , (req,res)=> {
+app.post("/customer/booking/:cuisineid",Authenticateme ,async (req,res)=> {
     const {cuisineid,DOS,NOP,transactionid} = req.params;
     const DOB =  new Date();
-    const Customerid = Customer.findOne({req.user.username});
-    const booking = new Bookings({Cuisineid, Customerid ,DOB,DOS,NOP,transactionid})
+    const username = req.user.email;
+    const Customeri = await Customer.findOne({username});
+    const Cuisine = await Cuisines.findOne({cuisineid});
+    if (Customeri && Cuisine){
+    const booking = new Bookings({Customeri, Cuisine ,DOB,DOS,NOP,transactionid});
+    booking.save();
+    res.json({message: "Booking is created"});
+    }
+    else{
+        res.sendStatus(404);
+    }
  })
 
  app.get("/customer/chats",Authenticateme , (req,res)=> {
